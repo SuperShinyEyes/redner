@@ -2,6 +2,16 @@ cmake_minimum_required(VERSION 3.12)
 
 project(redner VERSION 0.0.1 DESCRIPTION "Differentiable Path Tracer")
 enable_language(CUDA)
+
+set(OptiX_INCLUDE /usr/local/optix/include)
+set(optix_LIBRARY /usr/local/optix/lib64/liboptix.so)
+set(optix_prime_LIBRARY /usr/local/optix/lib64/liboptix_prime.so)
+set(EMBREE_INCLUDE_PATH /app/embree/include)
+set(EMBREE_LIBRARY /app/embree/embree-3.2.4.x86_64.linux/lib/libembree3.so.3)
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
 if(WIN32)
@@ -17,7 +27,7 @@ else()
     find_package(Thrust REQUIRED)
 endif()
 find_package(Embree REQUIRED)
-if(NOT EMBREE_FOUND)
+if(NOT Embree_FOUND)
     add_subdirectory(embree)
 endif()
 

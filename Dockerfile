@@ -59,25 +59,37 @@ RUN rm -rf build_$LLVM_VERSION
 
 #-----------------------------------------------------
 # Build Redner
-# cmake -D CUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.0 ..
-# cmake -D CUDA_LIBRARIES
-# THRUST_INCLUDE_DIR
-# optix_prime_LIBRARY
-# CUDA_curand_LIBRARY
 
-#-----------------------------------------------------
-# WORKDIR /
+RUN conda install --yes pybind11 numpy scikit-image
+RUN apt-get update && apt-get install -y \
+    libtbb-dev \ 
+    pkg-config \ 
+    libglfw3-dev \
+    libopenexr-dev \ 
+    libopenimageio-dev \
+    ranger
+
+# Upgrade to gcc 7
+# https://gist.github.com/jlblancoc/99521194aba975286c80f93e47966dc5
+RUN apt-get install -y software-properties-common && \
+    add-apt-repository ppa:ubuntu-toolchain-r/test && \
+    apt update && \
+    apt install g++-7 -y && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 60 \
+                         --slave /usr/bin/g++ g++ /usr/bin/g++-7 && \
+    update-alternatives --config gcc
+
+#RUN wget https://github.com/embree/embree/releases/download/v3.2.4/embree-3.2.4.x86_64.linux.tar.gz
+#WORKDIR /
 #RUN git clone --recursive https://github.com/supershinyeyes/redner.git 
-COPY . /app
-RUN chmod -R a+wx /app
+COPY redner /app
 WORKDIR /app
-
+RUN chmod -R a+w /app
 ARG OPTIX_VERSION=6.0.0
 COPY dependencies/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64 /usr/local/optix
 ENV LD_LIBRARY_PATH /usr/local/optix/lib64:${LD_LIBRARY_PATH}
 
-RUN cmake -DOptiX_INCLUDE=/usr/local/optix/include -Doptix_LIBRARY=/usr/local/optix/lib64 -Doptix_prime_LIBRARY=/usr/local/optix/SDK
-
+# Build Redner
 RUN mkdir build && \
     cd build && \
     cmake .. && \
@@ -87,9 +99,18 @@ RUN mkdir build && \
 # RUN chmod -R a+w /redner
 
 # python -c "import torch; print(torch.cuda.is_available())"
+# python -c "import pyredner"
+
 
 # CMake Error at cmake/FindOptiX.cmake:82 (message):
 #   optix library not found.  Please locate before proceeding.
 # Call Stack (most recent call first):
 #   cmake/FindOptiX.cmake:91 (OptiX_report_error)
 #   CMakeLists.txt:15 (find_package)
+
+#  OpenImageIO not found in your environment. You can 1) install
+#                               via your OS package manager, or 2) install it
+#                               somewhere on your machine and point OPENIMAGEIO_ROOT to it. (missing: OPENIMAGEIO_INCLUDE_DIR OPENIMAGEIO_LIBRARY) 
+
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-10.0/lib64
+# docker run --runtime=nvidia -it --rm --env="DISPLAY" shinyeyes/redner:v0.4 /bin/bash 
