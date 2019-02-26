@@ -82,11 +82,11 @@ RUN apt-get install -y software-properties-common && \
 #RUN wget https://github.com/embree/embree/releases/download/v3.2.4/embree-3.2.4.x86_64.linux.tar.gz
 #WORKDIR /
 #RUN git clone --recursive https://github.com/supershinyeyes/redner.git 
-COPY redner /app
+COPY . /app
 WORKDIR /app
 RUN chmod -R a+w /app
 ARG OPTIX_VERSION=6.0.0
-COPY dependencies/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64 /usr/local/optix
+RUN mv dependencies/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64 /usr/local/optix
 ENV LD_LIBRARY_PATH /usr/local/optix/lib64:${LD_LIBRARY_PATH}
 
 # Build Redner
