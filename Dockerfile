@@ -60,7 +60,14 @@ RUN rm -rf build_$LLVM_VERSION
 #-----------------------------------------------------
 # Build Redner
 
-RUN conda install --yes pybind11 numpy scikit-image
+RUN conda install --yes \ 
+    ffmpeg=4.0 \
+    numpy=1.15.4 \
+    pybind11=2.2.4 \
+    scikit-image=0.14.1 \
+    scipy=1.1.0
+
+
 RUN apt-get update && apt-get install -y \
     libtbb-dev \ 
     pkg-config \ 
@@ -85,7 +92,7 @@ RUN apt-get install -y software-properties-common && \
 COPY . /app
 WORKDIR /app
 RUN chmod -R a+w /app
-ARG OPTIX_VERSION=6.0.0
+ARG OPTIX_VERSION=5.1.0
 RUN mv dependencies/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64 /usr/local/optix
 ENV LD_LIBRARY_PATH /usr/local/optix/lib64:${LD_LIBRARY_PATH}
 
@@ -95,22 +102,7 @@ RUN mkdir build && \
     cmake .. && \
     make install -j 8 
 
-# WORKDIR /redner
-# RUN chmod -R a+w /redner
 
 # python -c "import torch; print(torch.cuda.is_available())"
 # python -c "import pyredner"
-
-
-# CMake Error at cmake/FindOptiX.cmake:82 (message):
-#   optix library not found.  Please locate before proceeding.
-# Call Stack (most recent call first):
-#   cmake/FindOptiX.cmake:91 (OptiX_report_error)
-#   CMakeLists.txt:15 (find_package)
-
-#  OpenImageIO not found in your environment. You can 1) install
-#                               via your OS package manager, or 2) install it
-#                               somewhere on your machine and point OPENIMAGEIO_ROOT to it. (missing: OPENIMAGEIO_INCLUDE_DIR OPENIMAGEIO_LIBRARY) 
-
-# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-10.0/lib64
 # docker run --runtime=nvidia -it --rm --env="DISPLAY" shinyeyes/redner:v0.4 /bin/bash 
