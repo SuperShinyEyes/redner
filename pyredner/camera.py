@@ -1,5 +1,5 @@
 import numpy as np
-import torch
+import tensorflow as tf
 import pyredner.transform as transform
 
 class Camera:
@@ -33,14 +33,14 @@ class Camera:
                  resolution,
                  cam_to_ndc = None,
                  fisheye = False):
-        assert(position.dtype == torch.float32)
+        assert(position.dtype == tf.float32)
         assert(len(position.shape) == 1 and position.shape[0] == 3)
-        assert(look_at.dtype == torch.float32)
+        assert(look_at.dtype == tf.float32)
         assert(len(look_at.shape) == 1 and look_at.shape[0] == 3)
-        assert(up.dtype == torch.float32)
+        assert(up.dtype == tf.float32)
         assert(len(up.shape) == 1 and up.shape[0] == 3)
         if fov is not None:
-            assert(fov.dtype == torch.float32)
+            assert(fov.dtype == tf.float32)
             assert(len(fov.shape) == 1 and fov.shape[0] == 1)
         assert(isinstance(clip_near, float))
 
@@ -49,15 +49,15 @@ class Camera:
         self._up = up
         self._fov = fov
         self.cam_to_world = transform.gen_look_at_matrix(position, look_at, up)
-        self.world_to_cam = torch.inverse(self.cam_to_world).contiguous()
+        self.world_to_cam = tf.linalg.inv(self.cam_to_world).contiguous()
         if cam_to_ndc is None:
-            fov_factor = 1.0 / torch.tan(transform.radians(0.5 * fov))
-            o = torch.ones([1], dtype=torch.float32)
-            diag = torch.cat([fov_factor, fov_factor, o], 0)
-            self._cam_to_ndc = torch.diag(diag)
+            fov_factor = 1.0 / tf.tan(transform.radians(0.5 * fov))
+            o = tf.ones([1], dtype=tf.float32)
+            diag = tf.concat([fov_factor, fov_factor, o], 0)
+            self._cam_to_ndc = tf.diag(diag)
         else:
             self._cam_to_ndc = cam_to_ndc
-        self.ndc_to_cam = torch.inverse(self.cam_to_ndc)
+        self.ndc_to_cam = tf.linalg.inv(self.cam_to_ndc)
         self.clip_near = clip_near
         self.resolution = resolution
         self.fisheye = fisheye
@@ -71,7 +71,7 @@ class Camera:
         self._position = value
         self.cam_to_world = \
             transform.gen_look_at_matrix(self._position, self._look_at, self._up)
-        self.world_to_cam = torch.inverse(self.cam_to_world).contiguous()
+        self.world_to_cam = tf.linalg.inv(self.cam_to_world).contiguous()
 
     @property
     def look_at(self):
@@ -82,7 +82,7 @@ class Camera:
         self._look_at = value
         self.cam_to_world = \
             transform.gen_look_at_matrix(self._position, self._look_at, self._up)
-        self.world_to_cam = torch.inverse(self.cam_to_world).contiguous()
+        self.world_to_cam = tf.linalg.inv(self.cam_to_world).contiguous()
 
     @property
     def up(self):
@@ -93,7 +93,7 @@ class Camera:
         self._up = value
         self.cam_to_world = \
             transform.gen_look_at_matrix(self._position, self._look_at, self._up)
-        self.world_to_cam = torch.inverse(self.cam_to_world).contiguous()
+        self.world_to_cam = tf.linalg.inv(self.cam_to_world).contiguous()
 
     @property
     def fov(self):
@@ -102,11 +102,11 @@ class Camera:
     @fov.setter
     def fov(self, value):
         self._fov = value
-        fov_factor = 1.0 / torch.tan(transform.radians(0.5 * self._fov))
-        o = torch.ones([1], dtype=torch.float32)
-        diag = torch.cat([fov_factor, fov_factor, o], 0)
-        self._cam_to_ndc = torch.diag(diag)
-        self.ndc_to_cam = torch.inverse(self._cam_to_ndc)
+        fov_factor = 1.0 / tf.tan(transform.radians(0.5 * self._fov))
+        o = tf.ones([1], dtype=tf.float32)
+        diag = tf.concat([fov_factor, fov_factor, o], 0)
+        self._cam_to_ndc = tf.diag(diag)
+        self.ndc_to_cam = tf.linalg.inv(self._cam_to_ndc)
 
     @property
     def cam_to_ndc(self):
@@ -115,5 +115,5 @@ class Camera:
     @cam_to_ndc.setter
     def cam_to_ndc(self, value):
         self._cam_to_ndc = value
-        self.ndc_to_cam = torch.inverse(self._cam_to_ndc)
+        self.ndc_to_cam = tf.linalg.inv(self._cam_to_ndc)
 
