@@ -1,53 +1,62 @@
 import math
 import numpy as np
-import torch
+import tensorflow as tf
 
 def radians(deg):
     return (math.pi / 180.0) * deg
 
 def normalize(v):
-    return v / torch.norm(v)
+    """
+
+    NOTE: torch.norm() uses Frobineus norm which is Euclidean and L2
+    """
+    return v / tf.norm(v)
 
 def gen_look_at_matrix(pos, look, up):
+    """
+    NOTE: torch version returned the contiguous tensor. Which is basically a hard
+    copy of the transposed tensor. Without contiguous it's pointing to the same 
+    tensor as the argument. In Tensorflow, it returns a copy(?)
+    """
     d = normalize(look - pos)
-    right = normalize(torch.cross(d, normalize(up)))
-    new_up = normalize(torch.cross(right, d))
-    z = torch.zeros([1], dtype=torch.float32)
-    o = torch.ones([1], dtype=torch.float32)
-    return torch.transpose(torch.stack([torch.cat([right , z], 0),
-                                        torch.cat([new_up, z], 0),
-                                        torch.cat([d     , z], 0),
-                                        torch.cat([pos   , o], 0)]), 0, 1).contiguous()
+    right = normalize(tf.linalg.cross(d, normalize(up)))
+    new_up = normalize(tf.linalg.cross(right, d))
+    z = tf.zeros([1], dtype=tf.float32)
+    o = tf.ones([1], dtype=tf.float32)
+    return tf.transpose(tf.stack([tf.concat([right , z], 0),
+                                        tf.concat([new_up, z], 0),
+                                        tf.concat([d     , z], 0),
+                                        tf.concat([pos   , o], 0)]), 0, 1)
 
 def gen_scale_matrix(scale):
-    o = torch.ones([1], dtype=torch.float32)
-    return torch.diag(torch.cat([scale, o], 0))
+    o = tf.ones([1], dtype=tf.float32)
+    return tf.diag(tf.concat([scale, o], 0))
 
 def gen_translate_matrix(translate):
-    z = torch.zeros([1], dtype=torch.float32)
-    o = torch.ones([1], dtype=torch.float32)
-    return torch.stack([torch.cat([o, z, z, translate[0:1]], 0),
-                        torch.cat([z, o, z, translate[1:2]], 0),
-                        torch.cat([z, z, o, translate[2:3]], 0),
-                        torch.cat([z, z, z, o], 0)])
+    z = tf.zeros([1], dtype=tf.float32)
+    o = tf.ones([1], dtype=tf.float32)
+    return tf.stack([tf.concat([o, z, z, translate[0:1]], 0),
+                        tf.concat([z, o, z, translate[1:2]], 0),
+                        tf.concat([z, z, o, translate[2:3]], 0),
+                        tf.concat([z, z, z, o], 0)])
 
 def gen_perspective_matrix(fov, clip_near, clip_far):
     clip_dist = clip_far - clip_near
-    cot = 1 / torch.tan(radians(fov / 2.0))
-    z = torch.zeros([1], dtype=torch.float32)
-    o = torch.ones([1], dtype=torch.float32)
-    return torch.stack([torch.cat([cot,   z,             z,                       z], 0),
-                        torch.cat([  z, cot,             z,                       z], 0),
-                        torch.cat([  z,   z, 1 / clip_dist, - clip_near / clip_dist], 0),
-                        torch.cat([  z,   z,             o,                       z], 0)])
+    cot = 1 / tf.tan(radians(fov / 2.0))
+    z = tf.zeros([1], dtype=tf.float32)
+    o = tf.ones([1], dtype=tf.float32)
+    return tf.stack([tf.concat([cot,   z,             z,                       z], 0),
+                        tf.concat([  z, cot,             z,                       z], 0),
+                        tf.concat([  z,   z, 1 / clip_dist, - clip_near / clip_dist], 0),
+                        tf.concat([  z,   z,             o,                       z], 0)])
 
 def gen_rotate_matrix(angles):
     theta = angles[0]
     phi = angles[1]
     psi = angles[2]
-    rot_x = torch.zeros((3, 3), device=angles.device, dtype=torch.float32)
-    rot_y = torch.zeros((3, 3), device=angles.device, dtype=torch.float32)
-    rot_z = torch.zeros((3, 3), device=angles.device, dtype=torch.float32)
+    rot_x = tf.zeros((3, 3), dtype=tf.float32)
+    rot_y = tf.zeros((3, 3), dtype=tf.float32)
+    rot_z = tf.zeros((3, 3), dtype=tf.float32)
     rot_x[0, 0] = 1
     rot_x[0, 1] = 0
     rot_x[0, 2] = 0
